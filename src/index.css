@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom font for the certificate */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Pinyon+Script&display=swap');

@@ -1,6 +1,8 @@
-import React, { useState } from 'react'; // React goes first
+import React, { useState } from 'react';
 import { Layout, ShieldCheck, History, Settings, PlusCircle, LogOut } from 'lucide-react';
-import Template1 from './components/Template1'; // Then components
+
+// MAKE SURE THIS PATH IS EXACT:
+import Template1 from './components/Template1';
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('templates');

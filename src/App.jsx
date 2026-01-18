@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "firebase/auth";
 import { getFirestore, collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
@@ -20,36 +20,53 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- COMPONENT: CERTIFICATE RENDERER ---
-const Certificate = ({ studentName, course, date, bgImage, id }) => (
-  <div id={id} className="relative w-full aspect-[1.414/1] bg-white text-slate-900 shadow-2xl overflow-hidden">
-    {/* Background: Either Uploaded Image or Default Border */}
-    {bgImage ? (
-      <img src={bgImage} className="absolute inset-0 w-full h-full object-cover" alt="template" />
-    ) : (
-      <div className="absolute inset-0 border-[16px] border-double border-slate-800 m-4"></div>
+// --- IMPROVED CERTIFICATE COMPONENT ---
+const Certificate = ({ studentName, course, date, bgImage, id, isPreview = false }) => (
+  <div 
+    id={id} 
+    className={`relative bg-white text-slate-900 shadow-2xl overflow-hidden flex flex-col items-center justify-between border-[12px] border-double border-slate-800 ${isPreview ? 'w-full aspect-[1.414/1]' : 'w-[800px] h-[565px]'}`}
+    style={{ background: bgImage ? `url(${bgImage}) center/cover no-repeat` : 'white' }}
+  >
+    {/* Decorative Corners (Only shows if no custom background) */}
+    {!bgImage && (
+      <>
+        <div className="absolute top-0 left-0 w-24 h-24 border-t-8 border-l-8 border-indigo-600 m-4"></div>
+        <div className="absolute bottom-0 right-0 w-24 h-24 border-b-8 border-r-8 border-indigo-600 m-4"></div>
+      </>
     )}
 
-    {/* Content Overlay */}
-    <div className="relative z-10 h-full flex flex-col items-center justify-between py-16 px-20 text-center">
-      <h1 className="text-4xl font-serif font-bold tracking-[0.2em] uppercase text-slate-800">Certificate</h1>
-      <div>
-        <p className="text-xl italic text-slate-500 mb-2">This is to certify that</p>
-        <h2 className="text-6xl font-bold text-slate-900 mb-6">{studentName || "Recipient Name"}</h2>
-        <p className="text-lg text-slate-600">has successfully completed</p>
-        <p className="text-2xl font-bold text-slate-800 mt-2">{course || "Course Name"}</p>
+    <div className="z-10 w-full h-full p-12 flex flex-col items-center justify-between text-center">
+      <div className="space-y-2">
+        <ShieldCheck size={isPreview ? 30 : 50} className="text-indigo-600 mx-auto mb-2" />
+        <h1 className="text-2xl md:text-3xl font-serif font-bold tracking-[0.3em] uppercase text-slate-800">Certificate</h1>
+        <p className="text-sm italic text-slate-500 uppercase tracking-widest">Of Achievement</p>
       </div>
-      <div className="w-full flex justify-around items-end">
-        <div className="text-center border-t border-slate-300 pt-2 px-8">
-          <p className="font-bold text-sm">{date}</p>
-          <p className="text-[10px] uppercase text-slate-400">Date Issued</p>
+
+      <div className="w-full">
+        <p className="text-lg italic text-slate-400 mb-1">This is to certify that</p>
+        <h2 className="text-4xl md:text-5xl font-bold text-slate-900 border-b-2 border-slate-100 pb-2 mb-4 px-10 inline-block max-w-full truncate">
+          {studentName || "Recipient Name"}
+        </h2>
+        <p className="text-base text-slate-500">has successfully completed all requirements for</p>
+        <p className="text-xl md:text-2xl font-bold text-indigo-700 mt-1 uppercase tracking-tight">
+          {course || "Course Title"}
+        </p>
+      </div>
+
+      <div className="w-full flex justify-between items-end px-4 border-t border-slate-100 pt-6">
+        <div className="text-left">
+          <p className="font-bold text-sm text-slate-800">{date}</p>
+          <p className="text-[10px] uppercase text-slate-400 font-bold">Issue Date</p>
         </div>
-        <div className="w-20 h-20 bg-slate-900/10 rounded flex items-center justify-center border border-slate-200">
-           <span className="text-[8px] text-slate-400">NEXCERT SECURE</span>
+        <div className="flex flex-col items-center">
+           <div className="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center mb-1">
+              <ShieldCheck size={20} className="text-white" />
+           </div>
+           <p className="text-[8px] text-slate-400 font-bold uppercase">NexCert Verified</p>
         </div>
-        <div className="text-center border-t border-slate-300 pt-2 px-8">
-          <p className="font-serif italic text-lg">Authorized Signatory</p>
-          <p className="text-[10px] uppercase text-slate-400">NexCert Protocol</p>
+        <div className="text-right">
+          <p className="font-serif italic text-lg text-slate-800">Authorized Official</p>
+          <p className="text-[10px] uppercase text-slate-400 font-bold">NexCert Protocol</p>
         </div>
       </div>
     </div>
@@ -103,36 +120,43 @@ const App = () => {
     if (!certData.name || !certData.course) return alert("Fill all fields!");
     const node = document.getElementById('cert-capture');
     
-    // The "White Image" Fix: Wait 500ms for browser to render
+    // THE FIX: Wait for rendering + Force 1:1 scale for capture
     setTimeout(async () => {
-      const dataUrl = await toPng(node, { cacheBust: true, pixelRatio: 2 });
-      const link = document.createElement('a');
-      link.download = `Cert-${certData.name}.png`;
-      link.href = dataUrl;
-      link.click();
+      try {
+        const dataUrl = await toPng(node, { 
+          cacheBust: true, 
+          pixelRatio: 2,
+          style: { transform: 'scale(1)', left: '0', top: '0' } // Ensures no cut-off
+        });
+        const link = document.createElement('a');
+        link.download = `Cert-${certData.name}.png`;
+        link.href = dataUrl;
+        link.click();
 
-      await addDoc(collection(db, "certificates"), { 
-        ...certData, 
-        userId: user.uid, 
-        createdAt: serverTimestamp() 
-      });
-      fetchHistory(user.uid);
-      alert("Certificate Issued Successfully!");
+        await addDoc(collection(db, "certificates"), { 
+          ...certData, 
+          userId: user.uid, 
+          createdAt: serverTimestamp() 
+        });
+        fetchHistory(user.uid);
+        alert("Certificate Issued Successfully!");
+      } catch (e) {
+        console.error(e);
+      }
     }, 500);
   };
 
   if (loading) return (
-    <div className="h-screen bg-[#020617] flex flex-col items-center justify-center text-white">
+    <div className="h-screen bg-[#020617] flex flex-col items-center justify-center text-white font-sans">
       <ShieldCheck className="text-indigo-500 mb-4 animate-bounce" size={60} />
-      <h1 className="text-4xl font-bold tracking-tighter">WELCOME TO NEXCERT</h1>
+      <h1 className="text-4xl font-black tracking-tighter uppercase italic">Welcome to NexCert</h1>
     </div>
   );
 
   if (!user) return (
-    <div className="h-screen bg-[#020617] flex items-center justify-center p-6">
+    <div className="h-screen bg-[#020617] flex items-center justify-center p-6 font-sans">
       <div className="bg-[#0f172a] p-10 rounded-3xl border border-white/10 w-full max-w-md shadow-2xl">
         <h2 className="text-3xl font-bold text-white mb-8 text-center">{isSignup ? "Create Account" : "Login"}</h2>
-        
         <div className="space-y-4">
           <div className="relative">
             <Mail className="absolute left-3 top-3.5 text-slate-500" size={18} />
@@ -143,7 +167,6 @@ const App = () => {
               onChange={(e) => setEmail(e.target.value)} 
             />
           </div>
-          
           <div className="relative">
             <Lock className="absolute left-3 top-3.5 text-slate-500" size={18} />
             <input 
@@ -152,19 +175,14 @@ const App = () => {
               className="w-full bg-slate-900 p-3.5 pl-10 rounded-xl border border-white/5 text-white outline-none focus:border-indigo-500" 
               onChange={(e) => setPassword(e.target.value)} 
             />
-            <button 
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-3.5 text-slate-500 hover:text-white"
-            >
+            <button onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3.5 text-slate-500 hover:text-white transition-colors">
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
         </div>
-
         <button onClick={handleAuth} className="w-full bg-indigo-600 p-4 rounded-xl font-bold text-white hover:bg-indigo-500 transition-all mt-8 shadow-lg shadow-indigo-600/20">
-          Continue to Dashboard
+          Continue
         </button>
-
         <p onClick={() => setIsSignup(!isSignup)} className="text-center text-slate-400 mt-6 cursor-pointer hover:text-white text-sm transition-colors">
           {isSignup ? "Already have an account? Login" : "Don't have an account? Sign up"}
         </p>
@@ -173,25 +191,23 @@ const App = () => {
   );
 
   return (
-    <div className="flex min-h-screen bg-[#020617] text-slate-200">
-      <aside className="w-64 bg-[#0f172a] border-r border-white/10 p-6 flex flex-col fixed h-full">
+    <div className="flex min-h-screen bg-[#020617] text-slate-200 font-sans">
+      {/* SIDEBAR */}
+      <aside className="w-64 bg-[#0f172a] border-r border-white/10 p-6 flex flex-col fixed h-full z-20">
         <div className="flex items-center gap-3 mb-10">
-          <ShieldCheck className="text-indigo-500" size={28} />
+          <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
+            <ShieldCheck className="text-white" size={24} />
+          </div>
           <span className="text-2xl font-black text-white tracking-tighter">NEXCERT</span>
         </div>
         <nav className="flex-1 space-y-2">
-          {[
-            { id: 'templates', icon: <Layout />, label: 'Designs' },
-            { id: 'issue', icon: <PlusCircle />, label: 'Editor' },
-            { id: 'history', icon: <History />, label: 'Archive' }
-          ].map(item => (
+          {[{ id: 'templates', icon: <Layout />, label: 'Designs' }, { id: 'issue', icon: <PlusCircle />, label: 'Editor' }, { id: 'history', icon: <History />, label: 'Archive' }].map(item => (
             <button 
               key={item.id} 
               onClick={() => setActiveTab(item.id)} 
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === item.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-white/5'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold ${activeTab === item.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:bg-white/5'}`}
             >
-              {item.icon}
-              <span className="font-semibold">{item.label}</span>
+              {item.icon} {item.label}
             </button>
           ))}
         </nav>
@@ -200,102 +216,95 @@ const App = () => {
         </button>
       </aside>
 
+      {/* MAIN CONTENT */}
       <main className="flex-1 ml-64 p-8">
         <div className="bg-[#0f172a]/50 border border-white/5 rounded-3xl p-8 min-h-[85vh] shadow-2xl backdrop-blur-sm">
           
-          {/* DESIGNS TAB (Gallery) */}
+          {/* DESIGNS TAB */}
           {activeTab === 'templates' && (
-            <div className="space-y-8">
+            <div className="space-y-8 animate-in fade-in duration-500">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-white">Select a Base Design</h2>
                 <button onClick={() => setActiveTab('issue')} className="bg-indigo-600 px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-500 transition-all">Start Custom Build</button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="group relative rounded-2xl overflow-hidden border border-white/10 hover:border-indigo-500 transition-all cursor-pointer shadow-xl">
-                    <div className="aspect-[1.4/1] bg-slate-900 flex items-center justify-center text-slate-700">Preview Design #{i}</div>
-                    <div className="absolute inset-0 bg-indigo-600/80 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                      <button onClick={() => setActiveTab('issue')} className="bg-white text-indigo-600 px-4 py-2 rounded-lg font-bold">Use Template</button>
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="group space-y-4">
+                  <div className="rounded-2xl overflow-hidden border-2 border-white/10 group-hover:border-indigo-500 transition-all shadow-xl scale-90 origin-top-left">
+                     <Certificate isPreview={true} studentName="John Doe" course="Blockchain Masterclass" date="01/19/2026" />
                   </div>
-                ))}
+                  <div className="flex justify-between items-center px-2">
+                    <span className="font-bold text-white">Classic Professional</span>
+                    <button onClick={() => setActiveTab('issue')} className="text-xs bg-white text-black px-3 py-1 rounded-full font-bold">Select</button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
           {/* EDITOR TAB */}
           {activeTab === 'issue' && (
-            <div className="grid lg:grid-cols-2 gap-12">
+            <div className="grid lg:grid-cols-2 gap-12 animate-in slide-in-from-bottom-4 duration-500">
               <div className="space-y-6">
-                <div className="bg-slate-900/50 p-6 rounded-2xl border border-white/5 space-y-4">
-                  <h3 className="text-lg font-bold text-white mb-2">Certificate Information</h3>
-                  <input type="text" placeholder="Recipient Name" className="w-full bg-slate-900 p-3.5 rounded-xl border border-white/10 text-white outline-none focus:border-indigo-500" onChange={(e) => setCertData({...certData, name: e.target.value})} />
-                  <input type="text" placeholder="Course / Title" className="w-full bg-slate-900 p-3.5 rounded-xl border border-white/10 text-white outline-none focus:border-indigo-500" onChange={(e) => setCertData({...certData, course: e.target.value})} />
-                  
+                <div className="bg-slate-900/50 p-6 rounded-2xl border border-white/5 space-y-6">
+                  <h3 className="text-lg font-bold text-white">Certificate Information</h3>
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block tracking-widest">Recipient Name</label>
+                    <input type="text" placeholder="e.g. Ram Joshi" className="w-full bg-slate-900 p-3.5 rounded-xl border border-white/10 text-white outline-none focus:border-indigo-500 transition-all" onChange={(e) => setCertData({...certData, name: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block tracking-widest">Course Title</label>
+                    <input type="text" placeholder="e.g. AI for all" className="w-full bg-slate-900 p-3.5 rounded-xl border border-white/10 text-white outline-none focus:border-indigo-500 transition-all" onChange={(e) => setCertData({...certData, course: e.target.value})} />
+                  </div>
                   <div className="pt-4 border-t border-white/5">
-                    <p className="text-xs font-bold text-slate-500 uppercase mb-3">Upload Custom Template</p>
                     <label className="flex items-center gap-3 bg-white/5 p-4 rounded-xl border border-dashed border-white/20 hover:bg-white/10 cursor-pointer transition-all">
                       <Upload size={20} className="text-indigo-400" />
-                      <span className="text-sm font-medium text-slate-300">Choose file from space</span>
+                      <span className="text-sm font-medium text-slate-300">Upload Custom Template</span>
                       <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
                     </label>
                   </div>
                 </div>
-                
-                <button onClick={handleIssue} className="w-full bg-indigo-600 p-4 rounded-xl font-extrabold text-white flex items-center justify-center gap-3 hover:bg-indigo-500 shadow-lg shadow-indigo-600/30 transition-all">
+                <button onClick={handleIssue} className="w-full bg-indigo-600 p-4 rounded-xl font-black text-white flex items-center justify-center gap-3 hover:bg-indigo-500 shadow-lg shadow-indigo-600/30 transition-all uppercase tracking-widest">
                   <Download size={22} /> Issue & Download PNG
                 </button>
               </div>
 
-              <div className="sticky top-8">
-                <p className="text-xs font-bold text-slate-500 uppercase mb-4 text-center">Live Preview</p>
-                <div className="scale-[0.6] origin-top-left xl:scale-[0.7]">
-                   <Certificate 
-                      id="cert-capture" 
-                      studentName={certData.name} 
-                      course={certData.course} 
-                      date={certData.date} 
-                      bgImage={certData.customBg} 
-                    />
+              <div className="flex flex-col items-center">
+                <p className="text-xs font-bold text-slate-500 uppercase mb-4 tracking-tighter">Live Preview</p>
+                {/* Hidden Capture Node (Always full size) */}
+                <div className="fixed left-[-9999px]">
+                  <Certificate id="cert-capture" studentName={certData.name} course={certData.course} date={certData.date} bgImage={certData.customBg} />
+                </div>
+                {/* Visible Preview (Scaled) */}
+                <div className="w-full max-w-md shadow-2xl rounded-lg overflow-hidden border border-white/10">
+                   <Certificate isPreview={true} studentName={certData.name} course={certData.course} date={certData.date} bgImage={certData.customBg} />
                 </div>
               </div>
             </div>
           )}
 
-          {/* ARCHIVE TAB (The "What is this?" section) */}
+          {/* ARCHIVE TAB */}
           {activeTab === 'history' && (
-            <div className="space-y-6">
+            <div className="space-y-6 animate-in fade-in">
               <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-white">Archive Ledger</h2>
+                <h2 className="text-2xl font-bold text-white">Issue History</h2>
                 <div className="relative">
                   <Search className="absolute left-3 top-2.5 text-slate-500" size={18} />
-                  <input 
-                    type="text" 
-                    placeholder="Search by name..." 
-                    className="bg-slate-900 pl-10 pr-4 py-2 rounded-lg border border-white/10 outline-none text-sm w-64"
-                    onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
-                  />
+                  <input type="text" placeholder="Search recipients..." className="bg-slate-900 pl-10 pr-4 py-2 rounded-lg border border-white/10 text-sm w-64 text-white" onChange={(e) => setSearchTerm(e.target.value.toLowerCase())} />
                 </div>
               </div>
-              
-              <div className="grid grid-cols-1 gap-3">
-                {history
-                  .filter(c => c.name.toLowerCase().includes(searchTerm))
-                  .map((c, i) => (
-                    <div key={i} className="bg-white/5 p-4 rounded-xl border border-white/5 flex justify-between items-center hover:bg-white/10 transition-all">
-                      <div>
-                        <p className="font-bold text-white text-lg">{c.name}</p>
-                        <p className="text-sm text-slate-400">{c.course}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-indigo-400 font-bold uppercase tracking-widest">Verified</p>
-                        <p className="text-xs text-slate-600 mt-1">{c.date}</p>
-                      </div>
+              <div className="grid gap-3">
+                {history.filter(c => c.name.toLowerCase().includes(searchTerm)).map((c, i) => (
+                  <div key={i} className="bg-white/5 p-4 rounded-xl border border-white/5 flex justify-between items-center hover:bg-white/10 transition-all">
+                    <div>
+                      <p className="font-bold text-white text-lg">{c.name}</p>
+                      <p className="text-sm text-slate-400 font-medium">{c.course}</p>
                     </div>
+                    <div className="text-right">
+                      <p className="text-xs text-indigo-400 font-black uppercase tracking-tighter">Secured</p>
+                      <p className="text-xs text-slate-600 mt-1">{c.date}</p>
+                    </div>
+                  </div>
                 ))}
-                {history.length === 0 && (
-                  <div className="text-center py-20 text-slate-600">No records found in the archive.</div>
-                )}
               </div>
             </div>
           )}

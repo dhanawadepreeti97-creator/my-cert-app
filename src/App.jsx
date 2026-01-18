@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from "firebase/app";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { getFirestore, collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
-import { Layout, ShieldCheck, History, PlusCircle, LogOut, Mail, Lock, Eye, EyeOff, Upload, Download, Search, Award, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, History, Layout, LogOut, Download, CheckCircle, Award } from 'lucide-react';
 import { toPng } from 'html-to-image';
 
-// 1. FIREBASE CONFIG 
+// 1. FIREBASE CONFIG (Paste your keys here)
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyAfnWSsQ8gs-Zm2rxq9bf-bYMXsg2zFlJ8",
   authDomain: "nexcert-a718b.firebaseapp.com",
@@ -15,222 +16,208 @@ const firebaseConfig = {
   appId: "1:930636216606:web:128bf3d89482b866b0710f",
   measurementId: "G-PFPL5CLWRM"
 };
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- PROFESSIONAL CERTIFICATE TEMPLATE ---
-const ProfessionalTemplate = ({ data, id, isPreview = false }) => (
-  <div 
-    id={id} 
-    className={`relative bg-white text-[#1e293b] flex flex-col items-center justify-between shadow-2xl overflow-hidden border-[20px] border-[#f8fafc] ${isPreview ? 'w-full aspect-[1.414/1]' : 'w-[2000px] h-[1414px]'}`}
-    style={{ fontFamily: "'Times New Roman', Times, serif" }}
-  >
-    {/* Decorative Outer Border */}
-    <div className="absolute inset-4 border-4 border-[#1e293b]"></div>
-    <div className="absolute inset-6 border border-[#94a3b8]"></div>
+// --- PREMIUM GREEN & GOLD TEMPLATE COMPONENT ---
+const PremiumTemplate = ({ data, setData, isPreview = false, captureRef }) => {
+  const handleUpdate = (key, value) => {
+    if (!isPreview) setData({ ...data, [key]: value });
+  };
 
-    {/* Content Container */}
-    <div className="z-10 w-full h-full p-24 flex flex-col items-center justify-between text-center">
-      
-      {/* Header Section */}
-      <div className="space-y-4">
-        <h1 className="text-6xl font-bold tracking-[0.2em] uppercase text-[#0f172a] mb-2">Certificate of Achievement</h1>
-        <div className="w-64 h-1 bg-[#1e293b] mx-auto"></div>
-        <p className="text-2xl italic text-[#64748b] mt-4 font-sans">This acknowledges that</p>
+  return (
+    <div 
+      ref={captureRef}
+      className={`relative bg-white shadow-2xl overflow-hidden border-8 border-white ${isPreview ? 'w-full aspect-[1.414/1]' : 'w-[2000px] h-[1414px]'}`}
+      style={{ fontFamily: "'Playfair Display', serif" }}
+    >
+      {/* Designer Background Elements (Green & Gold Accents) */}
+      <div className="absolute top-0 left-0 w-full h-full">
+        <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[120%] bg-[#064e3b] -rotate-12 shadow-2xl"></div>
+        <div className="absolute top-0 left-0 w-[35%] h-full bg-[#065f46] -rotate-12"></div>
+        <div className="absolute top-0 left-[34%] w-2 h-full bg-[#fbbf24]"></div>
+        <div className="absolute bottom-[-10%] right-[-5%] w-[20%] h-[60%] bg-[#064e3b] rotate-45"></div>
+        <div className="absolute bottom-0 right-0 w-[15%] h-[40%] bg-[#fbbf24] rotate-45 opacity-50"></div>
       </div>
 
-      {/* Recipient Name Section */}
-      <div className="w-full">
-        <h2 className="text-8xl font-bold text-[#0f172a] mb-4 underline decoration-[#cbd5e1] decoration-1 underline-offset-[16px]">
-          {data.name || "Dharmaraj Dhanawade"}
-        </h2>
-        <p className="text-xl max-w-4xl mx-auto leading-relaxed text-[#475569] font-sans mt-8">
-          has demonstrated exceptional skill and dedication through active participation and successful completion of the
-        </p>
-        <h3 className="text-4xl font-bold text-[#1e293b] mt-6 tracking-wide uppercase font-sans">
-          {data.course || "National Tech Symposium 2024"}
-        </h3>
-      </div>
-
-      {/* Footer / Signature Section */}
-      <div className="w-full flex justify-between items-end px-12 pb-10">
-        {/* Signatory 1 */}
-        <div className="flex flex-col items-center w-64">
-          <div className="w-full border-t-2 border-[#1e293b] pt-2">
-            <p className="text-xl font-bold uppercase tracking-tighter">{data.director || "Program Director"}</p>
-            <p className="text-sm text-[#94a3b8] font-sans font-bold">OFFICIAL AUTHORITY</p>
+      {/* Certificate Content */}
+      <div className="relative z-10 w-full h-full p-20 flex flex-col items-center justify-between text-center ml-[10%] w-[85%]">
+        <div className="space-y-4">
+          <div className="flex justify-center mb-6">
+            <div className="w-24 h-24 bg-[#fbbf24] rounded-full flex items-center justify-center shadow-lg">
+               <Award size={isPreview ? 30 : 80} className="text-[#064e3b]" />
+            </div>
           </div>
+          <h1 className="text-[#064e3b] font-black tracking-[0.2em] uppercase text-6xl">Certificate</h1>
+          <p className="text-[#fbbf24] text-xl font-bold tracking-[0.4em] uppercase">Of Appreciation</p>
         </div>
 
-        {/* Seal / Logo */}
-        <div className="relative flex flex-col items-center">
-           <div className="w-40 h-40 border-8 border-double border-indigo-200 rounded-full flex flex-col items-center justify-center bg-indigo-50/30">
-              <Award size={60} className="text-indigo-600 mb-1" />
-              <span className="text-[10px] font-black uppercase text-indigo-400">Certified {data.year || "2024"}</span>
-           </div>
-           <p className="mt-4 text-xs font-bold text-[#94a3b8] font-sans tracking-[0.3em]">NEXCERT PROTOCOL</p>
+        <div className="w-full space-y-8">
+          <p className="text-gray-500 italic text-2xl">This is proudly presented to</p>
+          
+          {/* INTERACTIVE NAME BOX */}
+          <input 
+            value={data.name} 
+            onChange={(e) => handleUpdate('name', e.target.value)}
+            disabled={isPreview}
+            className="w-full bg-transparent text-center text-7xl font-serif text-[#064e3b] border-b-2 border-transparent hover:border-gray-200 focus:border-[#fbbf24] outline-none py-2 transition-all cursor-text placeholder:text-gray-200"
+            placeholder="Recipient Name"
+          />
+
+          <p className="text-gray-600 text-xl max-w-2xl mx-auto leading-relaxed">
+            For the successful completion of the specialized program and demonstrating excellence in the field of:
+          </p>
+
+          {/* INTERACTIVE COURSE BOX */}
+          <input 
+            value={data.course} 
+            onChange={(e) => handleUpdate('course', e.target.value)}
+            disabled={isPreview}
+            className="w-full bg-transparent text-center text-3xl font-bold text-[#064e3b] border-b border-transparent hover:border-gray-200 focus:border-[#fbbf24] outline-none py-1 transition-all uppercase tracking-wider"
+            placeholder="Course or Symposium Title"
+          />
         </div>
 
-        {/* Signatory 2 */}
-        <div className="flex flex-col items-center w-64">
-          <div className="w-full border-t-2 border-[#1e293b] pt-2">
-            <p className="text-xl font-bold uppercase tracking-tighter">{data.coordinator || "Event Coordinator"}</p>
-            <p className="text-sm text-[#94a3b8] font-sans font-bold">VERIFIED ISSUER</p>
+        {/* Footer: Date and Signature */}
+        <div className="w-full flex justify-between items-end px-10 pb-10">
+          <div className="text-left w-64 border-t-2 border-[#064e3b] pt-4">
+            <input 
+              value={data.date} 
+              onChange={(e) => handleUpdate('date', e.target.value)}
+              disabled={isPreview}
+              className="w-full bg-transparent text-xl font-bold text-[#064e3b] outline-none"
+            />
+            <p className="text-xs uppercase text-gray-400 font-bold tracking-widest mt-1">Date of Issue</p>
+          </div>
+
+          <div className="text-right w-64 border-t-2 border-[#064e3b] pt-4">
+            <input 
+              value={data.signatory} 
+              onChange={(e) => handleUpdate('signatory', e.target.value)}
+              disabled={isPreview}
+              className="w-full bg-transparent text-xl font-bold text-[#064e3b] outline-none text-right font-serif italic"
+            />
+            <p className="text-xs uppercase text-gray-400 font-bold tracking-widest mt-1">Authorized Official</p>
           </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const App = () => {
-  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [isSignup, setIsSignup] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [activeTab, setActiveTab] = useState('templates');
-  const [certData, setCertData] = useState({ 
-    name: '', 
-    course: '', 
-    director: 'Program Director', 
-    coordinator: 'Event Coordinator', 
-    year: '2024' 
-  });
   const [history, setHistory] = useState([]);
+  const [certData, setCertData] = useState({
+    name: '',
+    course: '',
+    date: new Date().toLocaleDateString(),
+    signatory: 'Program Director'
+  });
+
+  const captureRef = useRef(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) fetchHistory(currentUser.uid);
-      setTimeout(() => setLoading(false), 1000);
-    });
-    return () => unsubscribe();
+    onAuthStateChanged(auth, (u) => { setUser(u); if (u) fetchHistory(u.uid); });
   }, []);
 
   const fetchHistory = async (uid) => {
     const q = query(collection(db, "certificates"), where("userId", "==", uid));
-    const querySnapshot = await getDocs(q);
-    setHistory(querySnapshot.docs.map(doc => doc.data()));
+    const snap = await getDocs(q);
+    setHistory(snap.docs.map(doc => doc.data()));
   };
 
-  const handleAuth = async () => {
-    try {
-      if (isSignup) await createUserWithEmailAndPassword(auth, email, password);
-      else await signInWithEmailAndPassword(auth, email, password);
-    } catch (err) { alert(err.message); }
-  };
-
-  const handleIssue = async () => {
-    const node = document.getElementById('cert-capture');
-    const dataUrl = await toPng(node, { pixelRatio: 1 });
+  const handleDownload = async () => {
+    if (!certData.name) return alert("Please click and enter a name on the certificate first!");
+    const dataUrl = await toPng(captureRef.current, { pixelRatio: 1 });
     const link = document.createElement('a');
-    link.download = `Certificate-${certData.name}.png`;
+    link.download = `Cert_${certData.name}.png`;
     link.href = dataUrl;
     link.click();
-
     await addDoc(collection(db, "certificates"), { ...certData, userId: user.uid, createdAt: serverTimestamp() });
     fetchHistory(user.uid);
   };
 
-  if (loading) return <div className="h-screen bg-[#020617] flex items-center justify-center text-white text-2xl font-black">NEXCERT AUTHENTICATING...</div>;
-
-  if (!user) return (
-    <div className="h-screen bg-[#020617] flex items-center justify-center p-6">
-      <div className="bg-[#0f172a] p-10 rounded-3xl border border-white/10 w-full max-w-md">
-        <h2 className="text-3xl font-bold text-white mb-8 text-center">{isSignup ? "Create Admin" : "Login"}</h2>
-        <div className="space-y-4">
-          <input type="email" placeholder="Email" className="w-full bg-slate-900 p-4 rounded-xl border border-white/5 text-white outline-none focus:border-indigo-500" onChange={(e) => setEmail(e.target.value)} />
-          <div className="relative">
-            <input type={showPassword ? "text" : "password"} placeholder="Password" title="Show/Hide" className="w-full bg-slate-900 p-4 rounded-xl border border-white/5 text-white outline-none focus:border-indigo-500" onChange={(e) => setPassword(e.target.value)} />
-            <button onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-4 text-slate-500">{showPassword ? <EyeOff /> : <Eye />}</button>
-          </div>
-        </div>
-        <button onClick={handleAuth} className="w-full bg-indigo-600 p-4 rounded-xl font-bold text-white mt-8 hover:bg-indigo-500 transition-all">Enter Dashboard</button>
-        <p onClick={() => setIsSignup(!isSignup)} className="text-center text-slate-400 mt-6 cursor-pointer text-sm">{isSignup ? "Have account? Login" : "Create new account"}</p>
-      </div>
-    </div>
-  );
+  if (!user) return <div className="h-screen bg-[#020617] flex items-center justify-center text-white font-bold">Please Login to Access NexCert Dashboard</div>;
 
   return (
-    <div className="flex min-h-screen bg-[#020617] text-slate-200">
-      <aside className="w-64 bg-[#0f172a] border-r border-white/10 p-6 flex flex-col fixed h-full">
-        <div className="flex items-center gap-3 mb-10"><ShieldCheck className="text-indigo-500" size={32} /><span className="text-2xl font-black text-white italic">NEXCERT</span></div>
-        <nav className="flex-1 space-y-2">
-          {[{ id: 'templates', icon: <Layout />, label: 'Designs' }, { id: 'issue', icon: <PlusCircle />, label: 'Editor' }, { id: 'history', icon: <History />, label: 'Archive' }].map(item => (
-            <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === item.id ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-white/5'}`}>{item.icon} <span className="font-bold">{item.label}</span></button>
-          ))}
+    <div className="flex min-h-screen bg-[#020617] text-slate-300 font-sans">
+      {/* Sidebar */}
+      <aside className="w-72 bg-[#0f172a] border-r border-white/5 p-8 flex flex-col fixed h-full z-30">
+        <div className="flex items-center gap-3 mb-12">
+          <ShieldCheck className="text-emerald-500" size={36} />
+          <span className="text-2xl font-black text-white tracking-tighter">NEXCERT</span>
+        </div>
+        <nav className="flex-1 space-y-3">
+          <button onClick={() => setActiveTab('templates')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all font-bold ${activeTab === 'templates' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'hover:bg-white/5'}`}><Layout /> Designs</button>
+          <button onClick={() => setActiveTab('history')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all font-bold ${activeTab === 'history' ? 'bg-emerald-600 text-white shadow-lg' : 'hover:bg-white/5'}`}><History /> Archive</button>
         </nav>
-        <button onClick={() => signOut(auth)} className="flex items-center gap-3 text-slate-500 hover:text-red-400 mt-auto"><LogOut /> Logout</button>
+        <button onClick={() => signOut(auth)} className="flex items-center gap-4 text-slate-500 hover:text-red-400 font-bold px-5 py-4"><LogOut /> Logout</button>
       </aside>
 
-      <main className="flex-1 ml-64 p-8">
-        <div className="bg-[#0f172a]/50 border border-white/5 rounded-[40px] p-10 min-h-[85vh]">
-          
+      {/* Main Area */}
+      <main className="flex-1 ml-72 p-10">
+        <div className="max-w-6xl mx-auto">
           {activeTab === 'templates' && (
-            <div className="space-y-8">
-              <h2 className="text-3xl font-bold text-white">Professional Library</h2>
-              <div className="grid grid-cols-2 gap-8">
-                <div className="bg-slate-900/50 p-6 rounded-3xl border-2 border-indigo-500/30 hover:border-indigo-500 transition-all group">
-                   <div className="rounded-xl overflow-hidden mb-4 shadow-2xl opacity-80 group-hover:opacity-100 transition-opacity">
-                      <ProfessionalTemplate data={{name: "Preview Name", course: "Sample Course"}} isPreview={true} />
-                   </div>
-                   <div className="flex justify-between items-center">
-                     <span className="font-bold text-white uppercase text-sm tracking-widest">Symposium Classic</span>
-                     <button onClick={() => setActiveTab('issue')} className="bg-white text-indigo-900 px-4 py-1.5 rounded-full font-bold text-xs">USE DESIGN</button>
-                   </div>
+            <div className="space-y-10">
+              <div>
+                <h1 className="text-4xl font-bold text-white mb-2">Professional Library</h1>
+                <p className="text-slate-500">Select a template to begin interactive editing.</p>
+              </div>
+              
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+                <div className="group relative">
+                  <div className="bg-slate-900/80 p-6 rounded-[32px] border-2 border-transparent hover:border-emerald-500 transition-all cursor-pointer overflow-hidden shadow-2xl">
+                    <PremiumTemplate data={{name: 'Jane Doe', course: 'Masterclass', date: '01/19/2026', signatory: 'Director'}} isPreview={true} />
+                    <div className="mt-6 flex justify-between items-center">
+                      <div>
+                        <h3 className="text-white font-bold text-xl">Emerald Excellence</h3>
+                        <p className="text-slate-500 text-sm font-medium">Industry Standard A4 Layout</p>
+                      </div>
+                      <button onClick={() => setActiveTab('editor')} className="bg-white text-black px-6 py-2 rounded-full font-black text-xs hover:bg-emerald-500 hover:text-white transition-colors">USE TEMPLATE</button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          {activeTab === 'issue' && (
-            <div className="grid lg:grid-cols-2 gap-16">
-              <div className="space-y-6">
-                <div className="bg-slate-900/80 p-8 rounded-[32px] border border-white/5 space-y-4 shadow-xl">
-                  <h3 className="text-xl font-bold text-indigo-400 mb-2">Customize Content</h3>
-                  <div className="space-y-4">
-                    <input type="text" placeholder="Recipient Name" className="w-full bg-slate-800 p-4 rounded-xl border border-white/10 text-white outline-none" onChange={(e) => setCertData({...certData, name: e.target.value})} />
-                    <input type="text" placeholder="Course / Symposium Title" className="w-full bg-slate-800 p-4 rounded-xl border border-white/10 text-white outline-none" onChange={(e) => setCertData({...certData, course: e.target.value})} />
-                    <div className="grid grid-cols-2 gap-4">
-                      <input type="text" placeholder="Director Title" className="w-full bg-slate-800 p-4 rounded-xl border border-white/10 text-white outline-none" onChange={(e) => setCertData({...certData, director: e.target.value})} />
-                      <input type="text" placeholder="Coordinator Title" className="w-full bg-slate-800 p-4 rounded-xl border border-white/10 text-white outline-none" onChange={(e) => setCertData({...certData, coordinator: e.target.value})} />
-                    </div>
-                  </div>
+          {activeTab === 'editor' && (
+            <div className="animate-in fade-in slide-in-from-bottom-5 duration-700">
+              <div className="flex justify-between items-end mb-8">
+                <div>
+                  <h1 className="text-3xl font-bold text-white">Live Interactive Editor</h1>
+                  <p className="text-emerald-500 font-bold text-sm">Click any text on the certificate to edit it directly.</p>
                 </div>
-                <button onClick={handleIssue} className="w-full bg-indigo-600 p-5 rounded-2xl font-black text-white flex items-center justify-center gap-3 hover:bg-indigo-500 shadow-2xl transition-all tracking-[0.2em] uppercase">
-                  <Download /> Issue Certificate
+                <button onClick={handleDownload} className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-3 shadow-xl shadow-emerald-900/40 transition-all active:scale-95">
+                  <Download size={20} /> FINAL ISSUE & DOWNLOAD
                 </button>
               </div>
-
-              <div className="sticky top-8 flex flex-col items-center">
-                <p className="text-xs font-bold text-slate-500 uppercase mb-4 tracking-widest">Master Preview</p>
-                <div className="w-full max-w-lg shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-                   <ProfessionalTemplate data={certData} isPreview={true} />
-                </div>
-                {/* Fixed Resolution Hidden Capture Area */}
-                <div className="fixed left-[-9999px]">
-                   <ProfessionalTemplate id="cert-capture" data={certData} isPreview={false} />
-                </div>
+              
+              <div className="bg-[#0f172a] p-2 rounded-[40px] shadow-3xl border border-white/5">
+                 <PremiumTemplate data={certData} setData={setCertData} isPreview={false} captureRef={captureRef} />
               </div>
             </div>
           )}
 
           {activeTab === 'history' && (
             <div className="space-y-6">
-              <h2 className="text-3xl font-bold text-white">Issue History Ledger</h2>
-              <div className="grid gap-3">
-                {history.map((c, i) => (
-                  <div key={i} className="bg-white/5 p-5 rounded-2xl border border-white/5 flex justify-between items-center">
-                    <div>
-                      <p className="font-bold text-white text-xl uppercase tracking-tighter">{c.name}</p>
-                      <p className="text-sm text-slate-400 italic">{c.course}</p>
+              <h1 className="text-3xl font-bold text-white">Issued Certificates</h1>
+              <div className="grid gap-4">
+                {history.map((h, i) => (
+                  <div key={i} className="bg-slate-900/50 p-6 rounded-2xl border border-white/5 flex justify-between items-center hover:bg-white/5 transition-all">
+                    <div className="flex items-center gap-5">
+                      <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-500"><CheckCircle /></div>
+                      <div>
+                        <p className="text-white font-bold text-lg">{h.name}</p>
+                        <p className="text-slate-500 text-sm">{h.course}</p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-indigo-400 font-bold text-xs bg-indigo-500/10 px-4 py-2 rounded-full border border-indigo-500/20">
-                      <CheckCircle2 size={16} /> VERIFIED {c.year}
+                    <div className="text-right">
+                      <p className="text-xs font-black text-emerald-500 uppercase tracking-widest">Verified</p>
+                      <p className="text-slate-600 text-xs mt-1">{h.date}</p>
                     </div>
                   </div>
                 ))}

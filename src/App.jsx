@@ -7,7 +7,13 @@ import { toPng } from 'html-to-image';
 
 // 1. FIREBASE CONFIG (Paste your keys from the Firebase console here)
 const firebaseConfig = {
-  // PASTE YOUR KEYS HERE
+  apiKey: "AIzaSyAfnWSsQ8gs-Zm2rxq9bf-bYMXsg2zFlJ8",
+  authDomain: "nexcert-a718b.firebaseapp.com",
+  projectId: "nexcert-a718b",
+  storageBucket: "nexcert-a718b.firebasestorage.app",
+  messagingSenderId: "930636216606",
+  appId: "1:930636216606:web:128bf3d89482b866b0710f",
+  measurementId: "G-PFPL5CLWRM"
 };
 
 const app = initializeApp(firebaseConfig);

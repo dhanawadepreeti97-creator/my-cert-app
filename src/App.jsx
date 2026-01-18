@@ -1,3 +1,4 @@
+import Template1 from './components/Template1';
 import React, { useState } from 'react';
 import { Layout, ShieldCheck, History, Settings, PlusCircle, LogOut } from 'lucide-react';
 

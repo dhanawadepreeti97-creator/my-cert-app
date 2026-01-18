@@ -63,16 +63,17 @@ const App = () => {
         <div className="bg-[#0f172a] border border-white/10 rounded-2xl p-8 min-h-[70vh] shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-600 to-transparent opacity-50"></div>
           
-          {activeTab === 'templates' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Template Placeholder */}
-              {[1,2,3].map((i) => (
-                <div key={i} className="aspect-[1.4/1] bg-slate-900/50 rounded-xl border border-dashed border-white/10 flex items-center justify-center group hover:border-indigo-500/50 transition-all cursor-pointer">
-                  <span className="text-slate-600 group-hover:text-indigo-400 font-medium">Template Design {i}</span>
-                </div>
-              ))}
-            </div>
-          )}
+{activeTab === 'templates' && (
+  <div className="max-w-4xl mx-auto space-y-12">
+    <div className="flex justify-between items-center">
+      <h3 className="text-xl font-semibold">Premium Design: Modern Tech</h3>
+      <button className="bg-indigo-600 hover:bg-indigo-700 px-6 py-2 rounded-lg font-medium transition-colors">
+        Use This Template
+      </button>
+    </div>
+    <Template1 />
+  </div>
+)}
         </div>
       </main>
     </div>
